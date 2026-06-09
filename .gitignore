@@ -1,0 +1,24 @@
+# Python venv — nooit in git
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# DVK opnames zijn persoonlijk, niet in git
+dvk_wav/*.wav
+
+# Maar de lege map wel bewaren
+!dvk_wav/.gitkeep
+
+# Tijdelijke bestanden
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Push scripts (lokaal gebruik)
+push_*.bat
+push_*.sh
+update.bat
+github_upload.bat
+github_upload.sh

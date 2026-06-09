@@ -1,104 +1,103 @@
-# DVK-TCI Interface — N1MM+ ↔ TCI Server
-**PE5JW / 2026**
+# DVK-TCI Interface
+**N1MM+ ↔ TCI Server bridge with DVK voice keyer**
+*PE5JW / 2026*
 
-Lichte brug-app die N1MM+ verbindt met een TCI-server (Zeus, Thetis, ExpertSDR2/3)
-via Kenwood TS-2000 CAT-emulatie over TCP. DVK audio wordt direct via de TCI TX+RX
-audio stream verstuurd — geen VB-Cable of andere virtual audio software nodig.
+[![CI](https://github.com/pe5jw/dvk-tci-interface/actions/workflows/ci.yml/badge.svg)](https://github.com/pe5jw/dvk-tci-interface/actions)
 
----
-
-## Architectuur
-
-```
-N1MM+ (logger)
-    |
-    | TCP 4532 — Kenwood TS-2000 CAT
-    |
-[ DVK-TCI Interface ]
-    |
-    | WebSocket — TCI protocol (ExpertSDR3 2.0)
-    |
-TCI Server (Zeus / Thetis / ExpertSDR2/3)
-    |
-    | Protocol1 / HPSDR
-    |
-Radio (HL2, ANAN, etc.)
-```
+Connects N1MM+ to a TCI-compatible SDR server (Zeus, Thetis, ExpertSDR) via a Kenwood TS-2000 CAT emulation over TCP. DVK audio is streamed directly over the TCI protocol — no virtual audio cable required.
 
 ---
 
-## Functies
+## Features
 
-- **Frequentie lezen/schrijven** — N1MM+ bandmap ↔ TCI VFO
-- **Modus** — N1MM+ mode ↔ TCI modulation
-- **PTT** — N1MM+ CAT TX/RX ↔ TCI `trx:0,true/false,tci;`
-- **DVK afspelen** — N1MM+ F-toetsen → WAV → float32 PCM → TCI TX+RX stream
-- **Automatische herverbinding** — als TCI server herstart
-
----
-
-## Vereisten
-
-- Python 3.10 of nieuwer
-- `pip install websockets` (start scripts doen dit automatisch)
-- Windows: geen extra drivers nodig
-- TCI server: Zeus, Thetis, ExpertSDR2 of ExpertSDR3
+- **CAT emulation** — N1MM+ connects as Kenwood TS-2000 on TCP port 4532
+- **Frequency & mode** — bidirectional sync between N1MM+ and TCI VFO
+- **PTT** — N1MM+ CAT TX/RX command → TCI `trx:0,true,tci;`
+- **DVK voice keyer** — N1MM+ F-keys trigger WAV playback via TCI TX+RX audio stream
+- **GUI** — status panel, frequency display, DVK memory leds, log window
+- **Record & playback** — record WAV files from microphone, play back locally or via TCI
+- **Auto-reconnect** — reconnects to TCI server automatically on disconnect
+- **Console mode** — headless operation via `start.bat`
 
 ---
 
-## Installatie
+## Requirements
 
-1. Pak de zip uit (bijv. `C:\ham\dvk-tci-interface\`)
-2. Dubbelklik `start.bat`
-3. Eerste keer: venv wordt aangemaakt en websockets geïnstalleerd
+- Python 3.10 or newer
+- `pip install websockets sounddevice numpy`
+  *(start scripts install these automatically)*
+- TCI server: Zeus, Thetis, ExpertSDR2 or ExpertSDR3
 
 ---
 
-## Configuratie (`config.ini`)
+## Quick Start
+
+1. Unzip to a folder (e.g. `C:\ham\dvk-tci-interface\`)
+2. Edit `config.ini` — set `tci_url` to your TCI server address
+3. Add your WAV recordings to `dvk_wav\` as `mem1.wav` … `mem8.wav`
+4. Start TCI server (Zeus / Thetis / ExpertSDR)
+5. Double-click `start_gui.bat` (GUI) or `start.bat` (console)
+6. Start N1MM+
+
+**Start order:** TCI server → DVK-TCI Interface → N1MM+
+
+---
+
+## Configuration (`config.ini`)
 
 ```ini
 [bridge]
-cat_port = 4532          # TCP poort voor N1MM+ (Kenwood TS-2000)
+# TCP port for N1MM+ (Kenwood TS-2000)
+cat_port = 4532
 
-# TCI server adres:
-# Zeus       : ws://IP:40001
-# Thetis     : ws://localhost:50001
-# ExpertSDR3 : ws://localhost:50001
-# ExpertSDR2 : ws://localhost:40001
+# TCI server address
+# Zeus (OpenHPSDR) : ws://192.168.x.x:40001
+# Thetis           : ws://localhost:50001
+# ExpertSDR3       : ws://localhost:50001
+# ExpertSDR2       : ws://localhost:40001
 tci_url = ws://192.168.x.x:40001
 
-tci_receiver = 0         # TCI receiver index (0 = eerste)
-dvk_dir = dvk_wav        # map met WAV bestanden
+# TCI receiver index (0 = first)
+tci_receiver = 0
+
+# Folder with DVK WAV files
+dvk_dir = dvk_wav
 
 [audio]
-dvk_tx_volume = 1.0      # volume TX stream (0.0 - 2.0)
-sample_rate = 48000      # TCI audio sample rate
-frame_samples = 2400     # samples per TCI frame (50ms bij 48kHz)
+# DVK playback volume to TCI TX stream (0.0 - 2.0, 1.0 = normal)
+dvk_tx_volume = 1.0
+
+# TCI audio sample rate
+sample_rate = 48000
+
+# Samples per TCI audio frame (2400 = 50ms at 48kHz)
+frame_samples = 2400
 
 [logging]
-level = INFO             # DEBUG voor meer detail
+# DEBUG, INFO, WARNING, ERROR
+level = INFO
 ```
 
 ---
 
-## N1MM+ instellen
+## N1MM+ Setup
 
-### Stap 1 — Radio koppelen
+### Step 1 — Link radio
 
-`Config` → `Configure Ports, Mode Control, Audio, Other` → tabblad **Hardware**
+`Config` → `Configure Ports, Mode Control, Audio, Other` → **Hardware** tab
 
-| Veld | Waarde |
-|------|--------|
+| Field | Value |
+|-------|-------|
 | Radio Nr | 1 |
 | Port | **Network** |
 | Radio | **Kenwood TS-2000** |
 | Network address | **127.0.0.1** |
 | Port Nr | **4532** |
-| ✅ PTT via Radio Command | aanvinken |
+| ✅ PTT via Radio Command | checked |
 
-### Stap 2 — DVK functietoetsen
+### Step 2 — DVK function keys
 
-`Config` → `Change SSB Function Key Definitions` → voeg toe aan het `.mc` bestand:
+`Config` → `Change SSB Function Key Definitions` → add to the `.mc` file:
 
 ```
 [Run]
@@ -118,87 +117,81 @@ F2={CAT1ASC FH03;}
 
 ---
 
-## DVK WAV bestanden
+## DVK WAV Files
 
-Zet opnames in `dvk_wav\` als `mem1.wav` t/m `mem8.wav`.
-Formaat: mono of stereo WAV, 44100 of 48000 Hz, 16-bit.
+Place recordings in `dvk_wav\` named `mem1.wav` through `mem8.wav`.  
+Format: mono or stereo WAV, 44100 or 48000 Hz, 16-bit.
 
-Gebruik de **DVK Recorder** app (`dvk-recorder`) om opnames te maken.
+**Using the GUI:** click ⏺ REC next to any memory slot, speak, click ⏹ Stop.  
+▶ PLAY previews locally. **TCI** button streams via TCI to the radio.
 
----
-
-## Opstartsvolgorde
-
-1. Start de **TCI server** (Zeus / Thetis / ExpertSDR)
-2. Start **DVK-TCI Interface** (`start.bat`)
-3. Start **N1MM+**
-
----
-
-## TCI audio protocol — bevindingen
-
-Na uitgebreid testen met Zeus (ExpertSDR3 2.0 protocol) zijn de volgende
-bevindingen gedocumenteerd voor toekomstige ontwikkelaars:
-
-### PTT via TCI
+**Generating sample files** (requires espeak-ng):
 ```
-trx:0,true,tci;     ← ,tci suffix is VERPLICHT om TCI audio naar TX te routen
+python make_dvk_samples.py PE5JW
+```
+
+---
+
+## TCI Protocol Notes
+
+These findings were established by testing against Zeus (ExpertSDR3 2.0 protocol):
+
+### PTT
+```
+trx:0,true,tci;    ← ,tci suffix routes TCI audio to TX chain — REQUIRED
 trx:0,false,tci;
 ```
-Zonder de `,tci` suffix accepteert Zeus de PTT wel maar wordt de TCI audio
-stream NIET naar de TX chain gerouteerd.
+Without `,tci` the PTT works but TCI audio is not routed to TX.
 
-### TX audio init volgorde (KRITISCH)
+### Audio init sequence (order is critical)
 ```
 audio_start:0;
 tx_stream_audio_buffering:50;
 audio_stream_samples:2048;
 audio_stream_channels:2;
 audio_stream_sample_type:float32;
-audio_samplerate:48000;        ← LAATSTE — triggert streaming
+audio_samplerate:48000;    ← LAST — triggers streaming
 ```
-`audio_samplerate` als laatste sturen is verplicht. `tx_enable` NIET sturen —
-dat verstoort de TX audio routing.
+Do **not** send `tx_enable` — it conflicts with TX audio routing.
 
 ### TX audio binary frame header (64 bytes)
 ```
 [0]  uint32 LE  receiver    = 0
 [4]  uint32 LE  sample_rate = 48000
-[8]  uint32 LE  format      = 3 (FLOAT32)
+[8]  uint32 LE  format      = 3  (FLOAT32)
 [12] uint32 LE  codec       = 0
 [16] uint32 LE  crc         = 0
-[20] uint32 LE  length      = aantal float32 waarden (stereo: samples * 2)
-[24] uint32 LE  type        = 2 (TX_AUDIO_STREAM)
-[28] uint32 LE  channels    = 2 (stereo)
-[32-63]         reserved    = 0 (32 bytes)
+[20] uint32 LE  length      = number of float32 values (stereo: samples × 2)
+[24] uint32 LE  type        = 2  (TX_AUDIO_STREAM)
+[28] uint32 LE  channels    = 2  (stereo)
+[32-63]         reserved    = 0  (32 bytes)
 ```
-Payload: float32 LE stereo interleaved (L,R,L,R,...)
+Payload: float32 LE stereo interleaved (L, R, L, R, …)
 
 ### RX audio binary frame header (8 bytes)
 ```
-[0]  uint16 LE  type        = 0 of 1
+[0]  uint16 LE  type        = 0 or 1
 [2]  uint16 LE  receiver    = 0
 [4]  uint32 LE  sample_rate = 48000
 ```
-Payload: float32 LE stereo interleaved
 
 ---
 
-## Hulptools
+## Utility: TCI Tone Test
 
-### `tci_tone_test.py` — TCI verbinding testen
-Test of TX audio correct aankomt bij de TCI server.
+Tests whether TX audio reaches the TCI server correctly.
+
 ```
 cd dvk-tci-interface
 venv\Scripts\activate
 python tci_tone_test.py ws://192.168.x.x:40001
 ```
-Stuurt een 1kHz testtoon van 2 seconden via TCI TX stream.
-Controleer in het spectrum of het signaal zichtbaar is.
+
+Sends a 1 kHz test tone for 2 seconds. Check the Zeus spectrum for a signal.
 
 ---
 
-## Compatibiliteit
+## Compatibility
 
 | Software | TCI URL | Protocol |
 |---|---|---|
@@ -209,23 +202,48 @@ Controleer in het spectrum of het signaal zichtbaar is.
 
 ---
 
-## Probleemoplossing
+## Troubleshooting
 
-**N1MM+ zegt "no radio":**
-Controleer poort 4532 in N1MM+ Hardware tab. Firewall kan TCP 4532 blokkeren.
+**N1MM+ shows "no radio"**  
+Check port 4532 in N1MM+ Hardware tab. Windows Firewall may block TCP 4532.
 
-**PTT werkt maar geen audio:**
-Controleer of `trx:0,true,tci;` verstuurd wordt (zie log met `level = DEBUG`).
-Controleer of `mem1.wav` t/m `mem8.wav` bestaan in `dvk_wav\`.
+**PTT works but no audio**  
+Check that `trx:0,true,tci;` is sent (set `level = DEBUG`).  
+Check that `mem1.wav` … `mem8.wav` exist in `dvk_wav\`.
 
-**TCI verbinding mislukt:**
-Controleer `tci_url` in config.ini. Zorg dat het IP-adres punten heeft
-(bijv. `192.168.8.141`, niet `192.168.8141`).
+**TCI connection refused**  
+Check `tci_url` — IP address must include dots (`192.168.8.141`, not `192.168.8141`).  
+The bridge auto-retries every 5 seconds.
 
-**Geen audio maar PTT werkt wel:**
-Zet `level = DEBUG` in config.ini en kijk of `DVK play mem1:` verschijnt.
-Controleer of de WAV-bestanden niet stil zijn (amplitude > 0).
+**GUI won't start (sounddevice error)**  
+Run: `venv\Scripts\activate` then `pip install sounddevice numpy`  
+Or use `start.bat` for console-only mode (no mic/playback needed).
 
 ---
+
+## Project Structure
+
+```
+dvk-tci-interface/
+├── src/
+│   ├── dvk_tci_interface.py   # headless bridge (CAT + TCI + DVK)
+│   └── dvk_tci_gui.py         # GUI wrapper
+├── tests/
+│   └── test_cat.py            # unit tests (pytest)
+├── dvk_wav/                   # place mem1.wav … mem8.wav here
+├── config.ini                 # configuration
+├── requirements.txt
+├── start.bat                  # start console version (Windows)
+├── start_gui.bat              # start GUI version (Windows)
+├── start.sh                   # start console version (Linux/macOS)
+├── tci_tone_test.py           # TCI audio diagnostic tool
+└── make_dvk_samples.py        # generate sample WAV files
+```
+
+---
+
+## License
+
+GNU General Public License v2 — see LICENSE
 
 73 de PE5JW

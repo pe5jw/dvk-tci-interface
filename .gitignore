@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# DVK WAV bestanden (eigen opnames, niet in repo)
+dvk_wav/*.wav
+
+# Maar de map zelf wel bewaren
+!dvk_wav/.gitkeep
+
+# Pytest cache
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

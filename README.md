@@ -1,4 +1,9 @@
 # DVK-TCI Interface
+---
+Beware this stil need debugging its not prefect (yet :) )
+
+---
+
 **N1MM+ ↔ TCI Server bridge with DVK voice keyer**
 *PE5JW / 2026*
 

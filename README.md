@@ -1,6 +1,6 @@
 # DVK-TCI Interface
 ---
-Beware this stil need debugging its not prefect (yet :) )
+Beware this stil needs debugging its not prefect (yet :) )
 
 ---
 
